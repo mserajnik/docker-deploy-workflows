@@ -1,0 +1,299 @@
+# SPDX-FileCopyrightText: 2026 Michael Serajnik <https://github.com/mserajnik>
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+name: Build and push Docker images
+
+# Other repositories call this workflow. It has no trigger of its own.
+on:
+  workflow_call:
+    inputs:
+      force-rebuild:
+        type: boolean
+        default: false
+      test-run:
+        type: boolean
+        default: false
+
+env:
+  UV_FROZEN: "1"
+  PYTHONPATH: .docker-deploy-workflows/src
+  PYTHONUNBUFFERED: "1"
+
+jobs:
+  plan:
+    name: Plan
+    runs-on: ubuntu-26.04
+    permissions:
+      contents: read
+      packages: read
+    outputs:
+      slot-1: ${{ steps.plan.outputs.slot-1 }}
+      slot-2: ${{ steps.plan.outputs.slot-2 }}
+      slot-3: ${{ steps.plan.outputs.slot-3 }}
+      packages: ${{ steps.plan.outputs.packages }}
+      badges: ${{ steps.plan.outputs.badges }}
+      retention: ${{ steps.plan.outputs.retention }}
+      retention-account: ${{ steps.plan.outputs.retention-account }}
+
+    steps:
+      - &refuse-rerun
+        name: Refuse a re-run
+        if: ${{ github.run_attempt != 1 && github.event_name != 'pull_request' }}
+        run: |
+          echo "::error::Re-runs are not supported, because a re-run reuses results of the earlier attempt that may no longer match the registry. Start a new run on the same branch with the same inputs, and with 'force-rebuild' if this run was a forced rebuild."
+          exit 1
+
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - &checkout-self
+        name: Checkout docker-deploy-workflows
+        uses: actions/checkout@v7
+        with:
+          repository: ${{ job.workflow_repository }}
+          ref: ${{ job.workflow_sha }}
+          path: .docker-deploy-workflows
+
+      - &install-uv
+        name: Install uv
+        uses: astral-sh/setup-uv@v10.2.0
+
+      - name: Plan the build
+        id: plan
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FORCE_REBUILD: ${{ inputs.force-rebuild }}
+          TEST_RUN: ${{ inputs.test-run }}
+          OCI_AUTHORS: ${{ vars.OCI_ANNOTATION_AUTHORS }}
+          OCI_VENDOR: ${{ vars.OCI_ANNOTATION_VENDOR }}
+        run: uv run --project .docker-deploy-workflows --no-dev python -m deploy_workflows plan
+
+  build-1:
+    name: Build ${{ matrix.leg.id }} (${{ matrix.platform }})
+    needs: plan
+    if: ${{ needs.plan.outputs.slot-1 != '[]' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        leg: ${{ fromJSON(needs.plan.outputs.slot-1) }}
+        platform: [amd64, arm64]
+    runs-on: ${{ matrix.platform == 'arm64' && 'ubuntu-26.04-arm' || 'ubuntu-26.04' }}
+    permissions:
+      contents: read
+      packages: write
+    env:
+      DOCKER_BUILD_RECORD_UPLOAD: false
+
+    steps: &build-steps
+      - *refuse-rerun
+
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - &login
+        name: Log in to container registry
+        if: ${{ github.event_name != 'pull_request' }}
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - name: Build image
+        id: build
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ${{ matrix.leg.dockerfile }}
+          platforms: linux/${{ matrix.platform }}
+          provenance: false
+          build-args: ${{ matrix.leg.build-args }}
+          labels: ${{ matrix.leg.labels }}
+          annotations: ${{ matrix.leg.annotations }}
+          outputs: ${{ github.event_name != 'pull_request' && format('type=image,name={0},push-by-digest=true,name-canonical=true,push=true,oci-mediatypes=true', matrix.leg.image) || '' }}
+
+      - name: Save digest
+        if: ${{ github.event_name != 'pull_request' }}
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+          PLATFORM: ${{ matrix.platform }}
+        run: mkdir digest && printf '%s\n' "$DIGEST" >"digest/$PLATFORM"
+
+      - name: Upload digest
+        if: ${{ github.event_name != 'pull_request' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: digest-${{ matrix.leg.id }}-${{ matrix.platform }}
+          path: digest/${{ matrix.platform }}
+          retention-days: 1
+
+  index-1:
+    name: Publish ${{ matrix.leg.id }}
+    needs: [plan, build-1]
+    # This also runs after a failed leg. It removes the images the leg left
+    # behind.
+    if: >-
+      ${{ !cancelled()
+      && needs.build-1.result != 'skipped'
+      && github.event_name != 'pull_request' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        leg: ${{ fromJSON(needs.plan.outputs.slot-1) }}
+    runs-on: ubuntu-26.04
+    permissions:
+      contents: read
+      packages: write
+
+    steps: &index-steps
+      - *refuse-rerun
+      - *checkout-self
+      - *install-uv
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - *login
+
+      - name: Download digests
+        uses: actions/download-artifact@v8
+        with:
+          pattern: digest-${{ matrix.leg.id }}-{amd64,arm64}
+          path: digests
+          merge-multiple: true
+
+      - name: Create multi-platform image index
+        env:
+          GH_TOKEN: ${{ github.token }}
+          LEG: ${{ toJSON(matrix.leg) }}
+        run: uv run --project .docker-deploy-workflows --no-dev python -m deploy_workflows index --leg "$LEG" --digests digests
+
+  build-2:
+    name: Build ${{ matrix.leg.id }} (${{ matrix.platform }})
+    needs: [plan, build-1, index-1]
+    if: >-
+      ${{ !cancelled()
+      && !contains(needs.*.result, 'failure')
+      && !contains(needs.*.result, 'cancelled')
+      && needs.plan.outputs.slot-2 != '[]' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        leg: ${{ fromJSON(needs.plan.outputs.slot-2) }}
+        platform: [amd64, arm64]
+    runs-on: ${{ matrix.platform == 'arm64' && 'ubuntu-26.04-arm' || 'ubuntu-26.04' }}
+    permissions:
+      contents: read
+      packages: write
+    env:
+      DOCKER_BUILD_RECORD_UPLOAD: false
+    steps: *build-steps
+
+  index-2:
+    name: Publish ${{ matrix.leg.id }}
+    needs: [plan, build-2]
+    if: >-
+      ${{ !cancelled()
+      && needs.build-2.result != 'skipped'
+      && github.event_name != 'pull_request' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        leg: ${{ fromJSON(needs.plan.outputs.slot-2) }}
+    runs-on: ubuntu-26.04
+    permissions:
+      contents: read
+      packages: write
+    steps: *index-steps
+
+  build-3:
+    name: Build ${{ matrix.leg.id }} (${{ matrix.platform }})
+    needs: [plan, build-1, index-1, build-2, index-2]
+    if: >-
+      ${{ !cancelled()
+      && !contains(needs.*.result, 'failure')
+      && !contains(needs.*.result, 'cancelled')
+      && needs.plan.outputs.slot-3 != '[]' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        leg: ${{ fromJSON(needs.plan.outputs.slot-3) }}
+        platform: [amd64, arm64]
+    runs-on: ${{ matrix.platform == 'arm64' && 'ubuntu-26.04-arm' || 'ubuntu-26.04' }}
+    permissions:
+      contents: read
+      packages: write
+    env:
+      DOCKER_BUILD_RECORD_UPLOAD: false
+    steps: *build-steps
+
+  index-3:
+    name: Publish ${{ matrix.leg.id }}
+    needs: [plan, build-3]
+    if: >-
+      ${{ !cancelled()
+      && needs.build-3.result != 'skipped'
+      && github.event_name != 'pull_request' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        leg: ${{ fromJSON(needs.plan.outputs.slot-3) }}
+    runs-on: ubuntu-26.04
+    permissions:
+      contents: read
+      packages: write
+    steps: *index-steps
+
+  retention:
+    name: Delete old package versions
+    needs: [plan, build-1, index-1, build-2, index-2, build-3, index-3]
+    if: >-
+      ${{ !cancelled()
+      && !contains(needs.*.result, 'failure')
+      && !contains(needs.*.result, 'cancelled')
+      && github.event_name != 'pull_request'
+      && !inputs.test-run }}
+    runs-on: ubuntu-26.04
+    permissions:
+      packages: write
+
+    steps:
+      - *refuse-rerun
+
+      - name: Delete old package versions
+        uses: snok/container-retention-policy@v3.1.0
+        with:
+          account: ${{ needs.plan.outputs.retention-account }}
+          token: ${{ github.token }}
+          image-names: ${{ needs.plan.outputs.packages }}
+          cut-off: ${{ needs.plan.outputs.retention }}
+
+  badges:
+    name: Update badges
+    needs: [plan, build-1, index-1, build-2, index-2, build-3, index-3, retention]
+    if: >-
+      ${{ !cancelled()
+      && !contains(needs.*.result, 'failure')
+      && !contains(needs.*.result, 'cancelled')
+      && github.event_name != 'pull_request'
+      && !inputs.test-run
+      && needs.plan.outputs.badges != '[]' }}
+    runs-on: ubuntu-26.04
+    permissions:
+      contents: read
+
+    steps:
+      - *refuse-rerun
+      - *checkout-self
+      - *install-uv
+
+      - name: Upload badge files over FTP
+        env:
+          BADGES: ${{ needs.plan.outputs.badges }}
+          BADGES_FTP_HOST: ${{ secrets.BADGES_FTP_HOST }}
+          BADGES_FTP_USERNAME: ${{ secrets.BADGES_FTP_USERNAME }}
+          BADGES_FTP_PASSWORD: ${{ secrets.BADGES_FTP_PASSWORD }}
+        run: uv run --project .docker-deploy-workflows --no-dev python -m deploy_workflows badges --badges "$BADGES"

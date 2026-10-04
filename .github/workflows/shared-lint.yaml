@@ -1,0 +1,124 @@
+# SPDX-FileCopyrightText: 2026 Michael Serajnik <https://github.com/mserajnik>
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+name: Lint
+
+# Other repositories call this workflow. It has no trigger of its own. The
+# inputs take repository-relative paths, one per line.
+on:
+  workflow_call:
+    inputs:
+      shell-exclude:
+        description: Shell scripts that shfmt and ShellCheck skip.
+        type: string
+        default: ""
+      extra-dockerfiles:
+        description: Dockerfiles with a name other than `Dockerfile`, which hadolint's recursive search misses.
+        type: string
+        default: ""
+      compose-files:
+        description: The files for `docker compose config` to validate.
+        type: string
+        default: ""
+
+jobs:
+  hadolint:
+    name: Hadolint
+    runs-on: ubuntu-26.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Run hadolint
+        uses: hadolint/hadolint-action@v3.5.0
+        with:
+          recursive: true
+
+      # hadolint-action takes a single file, so this runs the image that
+      # hadolint-action v3.5.0 runs. Keep the two versions in step.
+      - name: Run hadolint (extra Dockerfiles)
+        if: ${{ inputs.extra-dockerfiles != '' }}
+        env:
+          EXTRA_DOCKERFILES: ${{ inputs.extra-dockerfiles }}
+        run: |
+          files=()
+          while IFS= read -r path; do
+            if [[ -n "$path" ]]; then files+=("$path"); fi
+          done <<<"$EXTRA_DOCKERFILES"
+          docker run --rm -v "$PWD:/repository:ro" -w /repository ghcr.io/hadolint/hadolint:v2.15.1-debian hadolint "${files[@]}"
+
+  shellcheck:
+    name: ShellCheck
+    runs-on: ubuntu-26.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Run shellcheck
+        env:
+          SHELL_EXCLUDE: ${{ inputs.shell-exclude }}
+        run: |
+          exclude=()
+          while IFS= read -r path; do
+            if [[ -n "$path" ]]; then exclude+=(-not -path "./$path"); fi
+          done <<<"$SHELL_EXCLUDE"
+          find . -type f -not -path './.git/*' "${exclude[@]}" -name '*.sh' -print0 | xargs -0 -r shellcheck
+
+  shfmt:
+    name: shfmt
+    runs-on: ubuntu-26.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Install shfmt
+        uses: mfinelli/setup-shfmt@v4
+
+      - name: Run shfmt
+        env:
+          SHELL_EXCLUDE: ${{ inputs.shell-exclude }}
+        run: |
+          exclude=()
+          while IFS= read -r path; do
+            if [[ -n "$path" ]]; then exclude+=(-not -path "./$path"); fi
+          done <<<"$SHELL_EXCLUDE"
+          find . -type f -not -path './.git/*' "${exclude[@]}" -name '*.sh' -print0 | xargs -0 -r shfmt -d -i 2 -ci
+
+  compose:
+    name: Docker Compose
+    if: ${{ inputs.compose-files != '' }}
+    runs-on: ubuntu-26.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Run docker compose config
+        env:
+          COMPOSE_FILES: ${{ inputs.compose-files }}
+        run: |
+          while IFS= read -r file; do
+            if [[ -n "$file" ]]; then
+              echo "Validating '$file'."
+              docker compose --profile '*' -f "$file" config --quiet
+            fi
+          done <<<"$COMPOSE_FILES"
+
+  reuse:
+    name: REUSE compliance
+    runs-on: ubuntu-26.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Run reuse lint
+        uses: fsfe/reuse-action@v6
+
+  dprint:
+    name: dprint
+    runs-on: ubuntu-26.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Run dprint check
+        uses: dprint/check@v2.5

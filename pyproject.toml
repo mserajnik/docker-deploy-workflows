@@ -1,0 +1,55 @@
+[project]
+name = "docker-deploy-workflows"
+version = "0.0.0"
+description = "GitHub Actions workflows for repositories that build and publish Docker images"
+requires-python = ">=3.14"
+dependencies = [
+  "msgspec>=0.21.1,<0.22.0",
+  "pyyaml>=6.0.3,<7.0.0",
+]
+
+[dependency-groups]
+dev = [
+  "pytest>=9.1.1,<10.0.0",
+  "ruff>=0.16.9,<0.17.0",
+  "ty>=0.0.83,<0.0.84",
+]
+
+[tool.uv]
+package = false
+# Only resolve to versions published at least a week ago, to limit exposure to
+# supply-chain attacks via the package registry. Manifest pins have to respect
+# this too: pinning a release younger than the window makes the requirement
+# unsatisfiable.
+exclude-newer = "1 week"
+# Write `>=x.y.z,<next-major` bounds.
+add-bounds = "major"
+
+[tool.ruff]
+line-length = 79
+src = ["src", "tests"]
+target-version = "py314"
+
+[tool.ruff.lint]
+select = [
+  "ANN", # flake8-annotations
+  "B", # flake8-bugbear
+  "C4", # flake8-comprehensions
+  "E", # pycodestyle errors
+  "F", # pyflakes
+  "I", # isort
+  "N", # pep8-naming
+  "PTH", # flake8-use-pathlib
+  "RET", # flake8-return
+  "RUF", # ruff-specific rules
+  "SIM", # flake8-simplify
+  "UP", # pyupgrade
+  "W", # pycodestyle warnings
+]
+
+[tool.ruff.lint.pycodestyle]
+max-doc-length = 72
+
+[tool.pytest.ini_options]
+pythonpath = ["src", "tests"]
+testpaths = ["tests"]
