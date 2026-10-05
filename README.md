@@ -8,12 +8,12 @@
 docker-deploy-workflows is used by these repositories, which build Docker
 images from upstream source code:
 
-- [mserajnik/cmangos-deploy][cmangos-deploy]: a Docker setup for
-  [CMaNGOS][cmangos], a server emulator that supports Vanilla (which CMaNGOS
-  calls Classic), TBC, and WotLK.
 - [mserajnik/vmangos-deploy][vmangos-deploy]: a Docker setup for
   [VMaNGOS][vmangos], a progressive Vanilla server emulator that aims to
   eventually support all versions from `1.2.4.4222` to `1.12.1.5875`.
+- [mserajnik/cmangos-deploy][cmangos-deploy]: a Docker setup for
+  [CMaNGOS][cmangos], a server emulator that supports Vanilla (which CMaNGOS
+  calls Classic), TBC, and WotLK.
 - [mserajnik/tortoise-deploy][tortoise-deploy]: a Docker setup for
   [Tortoise-WoW][tortoise-wow], a community-driven restoration of Turtle WoW's
   `1.18.1.7272` patch with additions for solo play.
@@ -27,18 +27,18 @@ following:
 - Lint the shell scripts, Dockerfiles, Compose files, licensing, and Markdown
   of the repository.
 - Decide which images to build. Each image records the commits it comes from in
-  its labels, and a run builds it again once one of its sources has new
+  its labels, and it gets built again once one or more of its sources have new
   commits.
 - Watch upstream files that the Docker builds depend on, such as configuration
-  templates or build dependencies. When one changes, the run fails and shows
-  the difference. This makes it unnecessary to monitor upstream manually for
-  changes that the Docker builds have to follow.
+  templates or build dependencies. When a watched file changes, the workflow
+  run fails and shows the difference. This makes it unnecessary to monitor
+  upstream manually for changes that the Docker builds have to follow.
 - Notice when upstream edits a database migration that existing databases have
   already applied, and pass the edit on to the database image, so the image can
   handle it appropriately.
 - Build the images natively on `amd64` and `arm64`, publish each as one
-  multi-platform image, and remove package versions older than a configurable
-  age, two weeks by default.
+  multi-platform image to the GitHub Container Registry, and remove package
+  versions older than a configurable age, two weeks by default.
 - Upload status badges to an FTP server.
 
 If your project has similar requirements, docker-deploy-workflows can serve as
