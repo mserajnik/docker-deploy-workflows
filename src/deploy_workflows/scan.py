@@ -1,8 +1,10 @@
 # SPDX-FileCopyrightText: 2026 Michael Serajnik <https://github.com/mserajnik>
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-"""The migration-edit scan over blobless clones, see
-`docs/migration-edits.md`."""
+"""The migration-edit scan over blobless clones.
+
+See `docs/migration-edits.md`.
+"""
 
 import dataclasses
 import os

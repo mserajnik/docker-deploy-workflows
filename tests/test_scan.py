@@ -1,8 +1,10 @@
 # SPDX-FileCopyrightText: 2026 Michael Serajnik <https://github.com/mserajnik>
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-"""The scan against small real repositories, cloned blobless over
-`file://` with lazy fetches disabled."""
+"""The scan against small real repositories.
+
+They are cloned blobless over `file://`, with lazy fetches disabled.
+"""
 
 import subprocess
 from pathlib import Path

@@ -1,9 +1,11 @@
 # SPDX-FileCopyrightText: 2026 Michael Serajnik <https://github.com/mserajnik>
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-"""Drift checks on fake upstream content, for a configuration modeled on
-mserajnik/lost-city-rs-deploy: per-variant pins, file, absence, and tree
-checks."""
+"""Drift checks on fake upstream content.
+
+The configuration is modeled on mserajnik/lost-city-rs-deploy, with
+per-variant pins and file, absence, and tree checks.
+"""
 
 import msgspec
 import pytest

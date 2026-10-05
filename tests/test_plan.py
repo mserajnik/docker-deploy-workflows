@@ -1,9 +1,11 @@
 # SPDX-FileCopyrightText: 2026 Michael Serajnik <https://github.com/mserajnik>
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-"""The plan on fake GitHub and registry answers, for a configuration
-modeled on mserajnik/tortoise-deploy: three variants, a shared database
-image, and two targets."""
+"""The plan on fake GitHub and registry answers.
+
+The configuration is modeled on mserajnik/tortoise-deploy, with three
+variants, a shared database image, and two targets.
+"""
 
 import datetime
 import json

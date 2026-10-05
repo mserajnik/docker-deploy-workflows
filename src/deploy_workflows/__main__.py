@@ -26,9 +26,10 @@ def env_flag(name: str) -> bool:
 
 
 def report(level: Literal["error", "warning"], message: str) -> None:
-    """Prints an error or a warning, which GitHub Actions also shows as
-    an annotation. This package prints every error and warning with
-    it."""
+    """Prints an error or warning, also as a GitHub Actions annotation.
+
+    This package prints every error and warning with it.
+    """
     if env_flag("GITHUB_ACTIONS"):
         escaped = message.replace("%", "%25").replace("\r", "%0D")
         print(f"::{level}::{escaped.replace('\n', '%0A')}", file=sys.stderr)
@@ -109,8 +110,10 @@ def show(plan: Plan) -> None:
 
 
 def run_index(args: argparse.Namespace) -> int:
-    """Joins the per-architecture images into one index, or removes them
-    again when one is missing."""
+    """Joins the per-architecture images into one index.
+
+    Removes them again when one is missing.
+    """
     leg = msgspec.json.decode(args.leg, type=Leg)
     directory = Path(args.digests)
     digests = [

@@ -139,7 +139,10 @@ class Config(Model):
 
 
 def pick[T](mapping: dict[str, T], name: str, what: str) -> T:
-    """The entry `name` of `mapping`, or a `ConfigError` naming it."""
+    """The entry `name` of `mapping`.
+
+    Raises a `ConfigError` if there is none.
+    """
     if name not in mapping:
         raise ConfigError(f"Unknown {what} '{name}'.")
     return mapping[name]

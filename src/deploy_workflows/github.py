@@ -124,8 +124,10 @@ def request(
     method: str = "GET",
     allow: tuple[int, ...] = (),
 ) -> tuple[int, bytes]:
-    """The status and body of a request; any status outside 2xx and
-    `allow` raises `HttpError`."""
+    """The status and body of a request.
+
+    Any status outside 2xx and `allow` raises `HttpError`.
+    """
     req = urllib.request.Request(url, headers=headers or {}, method=method)
     try:
         with urllib.request.urlopen(req, timeout=TIMEOUT_SECONDS) as answer:
@@ -192,8 +194,10 @@ def last_change(repository: str, commit: str, path: str) -> Commit | None:
 
 
 def image_labels(name: str, tag: str) -> dict[str, str] | None:
-    """The labels of the image behind `name:tag`, `None` when the
-    package or the tag does not exist."""
+    """The labels of the image behind `name:tag`.
+
+    `None` when the package or the tag does not exist.
+    """
     # With credentials, a missing package answers 404; anonymously, 403.
     _, body = request(
         f"https://{REGISTRY}/token?scope=repository:{name}:pull"

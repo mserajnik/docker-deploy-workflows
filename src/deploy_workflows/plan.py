@@ -106,8 +106,11 @@ class Planner:
         return self.settings.force_rebuild or scheduled
 
     def resolve(self, source: str, variant: str | None) -> tuple[str, str]:
-        """The repository and resolved commit of a source for a variant,
-        or of an entry of `drift.upstreams` when `variant` is `None`."""
+        """The repository and resolved commit of a source for a variant.
+
+        With `variant` as `None`, the same for an entry of
+        `drift.upstreams`.
+        """
         entry: Source | Upstream
         if variant is None:
             entry = self.config.drift.upstreams[source]
@@ -223,8 +226,10 @@ class Planner:
             )
 
     def leg(self, image: Image, group: list[str]) -> Leg | None:
-        """The leg of `image` for `group`, `None` when the image is up
-        to date."""
+        """The leg of `image` for `group`.
+
+        `None` when the image is up to date.
+        """
         first = group[0]
         name = f"{self.settings.owner}/{self.package(image, first)}"
         reference = f"{github.REGISTRY}/{name}"
