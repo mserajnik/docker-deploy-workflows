@@ -2,27 +2,9 @@
 
 [![Lint status][badge-lint-status]][badge-lint-status-url]
 
-> GitHub Actions workflows for repositories that build and publish Docker
-> images
-
-docker-deploy-workflows is used by these repositories, which build Docker
-images from upstream source code:
-
-- [mserajnik/vmangos-deploy][vmangos-deploy]: a Docker setup for
-  [VMaNGOS][vmangos], a progressive Vanilla server emulator that aims to
-  eventually support all versions from `1.2.4.4222` to `1.12.1.5875`.
-- [mserajnik/cmangos-deploy][cmangos-deploy]: a Docker setup for
-  [CMaNGOS][cmangos], a server emulator that supports Vanilla (which CMaNGOS
-  calls Classic), TBC, and WotLK.
-- [mserajnik/tortoise-deploy][tortoise-deploy]: a Docker setup for
-  [Tortoise-WoW][tortoise-wow], a community-driven restoration of Turtle WoW's
-  `1.18.1.7272` patch with additions for solo play.
-- [mserajnik/lost-city-rs-deploy][lost-city-rs-deploy]: a Docker setup for
-  [Lost City RS][lost-city-rs], with an image for each fully playable version,
-  from `225` to `274`.
-
-Each of these projects uses docker-deploy-workflows to do some or all of the
-following:
+docker-deploy-workflows is a set of GitHub Actions workflows for repositories
+that build Docker images from upstream source code. With them, a repository can
+do some or all of the following:
 
 - Lint the shell scripts, Dockerfiles, Compose files, licensing, and Markdown
   of the repository.
@@ -40,6 +22,21 @@ following:
   multi-platform image to the GitHub Container Registry, and remove package
   versions older than a configurable age, two weeks by default.
 - Upload status badges to an FTP server.
+
+These repositories use docker-deploy-workflows:
+
+- [mserajnik/vmangos-deploy][vmangos-deploy]: a Docker setup for
+  [VMaNGOS][vmangos], a progressive Vanilla WoW server emulator that aims to
+  eventually support all versions from `1.2.4.4222` to `1.12.1.5875`.
+- [mserajnik/cmangos-deploy][cmangos-deploy]: a Docker setup for
+  [CMaNGOS][cmangos], a WoW server emulator that supports Vanilla (which
+  CMaNGOS calls Classic), TBC, and WotLK.
+- [mserajnik/tortoise-deploy][tortoise-deploy]: a Docker setup for
+  [Tortoise-WoW][tortoise-wow], a community-driven restoration of Turtle WoW's
+  `1.18.1.7272` patch.
+- [mserajnik/lost-city-rs-deploy][lost-city-rs-deploy]: a Docker setup for
+  [Lost City RS][lost-city-rs], an RS2 server emulator that aims to re-create
+  the original game accurately.
 
 If your project has similar requirements, docker-deploy-workflows can serve as
 a starting point. Use it as it is, or fork it and adjust it to your needs.
