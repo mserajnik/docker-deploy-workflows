@@ -46,8 +46,8 @@ PYTHONPATH=<path-to-docker-deploy-workflows>/src \
 ## Version
 
 docker-deploy-workflows has no version numbers besides its major version tags,
-such as `v1`, which the [README](../README.md) describes. The workflows run the
-package from their own checkout, so the version in
+such as `v1`, which the [caller workflow reference](workflows.md) describes.
+The workflows run the package from their own checkout, so the version in
 [`pyproject.toml`](../pyproject.toml) does not matter and stays `0.0.0`.
 
 [actionlint]: https://github.com/kjanat/actionlint

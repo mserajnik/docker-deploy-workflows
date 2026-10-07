@@ -41,10 +41,6 @@ These repositories use docker-deploy-workflows:
 If your project has similar requirements, docker-deploy-workflows can serve as
 a starting point. Use it as it is, or fork it and adjust it to your needs.
 
-Callers reference a major version tag, such as `v1`, which moves with every
-compatible change. A breaking change gets the next major version. There are no
-minor or patch version tags.
-
 ## Quick start
 
 1. Add the build and lint workflows to your repository, as the

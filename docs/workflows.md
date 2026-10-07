@@ -1,9 +1,13 @@
 # Caller workflow reference
 
 A caller repository uses docker-deploy-workflows through two workflows of its
-own, which reference it at a major version tag. The build workflow reads the
-build configuration from the caller repository's `.github/deploy.yaml`, which
-the [`deploy.yaml` reference](deploy-yaml.md) describes.
+own, which reference it at a major version tag, such as `v1`. The tag moves
+with every compatible change, and a breaking change gets the next major
+version. There are no minor or patch version tags.
+
+The build workflow reads the build configuration from the caller repository's
+`.github/deploy.yaml`, which the [`deploy.yaml` reference](deploy-yaml.md)
+describes.
 
 ## Build
 
