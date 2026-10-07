@@ -2,31 +2,30 @@
 
 ## Dependencies
 
-- [uv][uv], which installs Python 3.14 or later when it is missing
-- [Git][git]
-- [GitHub CLI][gh], logged in, for the plan below
-- [dprint][dprint]
-- [REUSE][reuse]
-- [actionlint][actionlint], the maintained fork of upstream actionlint
+- [uv][uv], for managing Python packages. It also installs Python 3.14 or later
+  when it is missing.
+- [GitHub CLI][gh], logged in, for the plan below.
+- [kjanat/actionlint][actionlint], for linting the workflows. It is a
+  maintained fork of actionlint that supports `ubuntu-26.04` runners,
+  `job.workflow_repository`, and `job.workflow_sha`, all of which this
+  repository uses.
+- [REUSE][reuse], for checking the licensing of every file.
+- [dprint][dprint], for formatting Markdown files.
 
 ## Checks
 
-To run the tests, the linters, and the type checker, as this repository's
-[lint workflow](../.github/workflows/lint.yaml) does:
+To run the same checks as this repository's
+[lint workflow](../.github/workflows/lint.yaml):
 
 ```sh
-uv run pytest
 uv run ruff check
 uv run ruff format --check
 uv run ty check
-dprint check
-reuse lint
+uv run pytest
 actionlint
+reuse lint
+dprint check
 ```
-
-Upstream actionlint does not know `job.workflow_repository` and
-`job.workflow_sha` yet, and reports them, along with the `ubuntu-26.04`
-runners, as false positives.
 
 ## Plan
 
@@ -46,13 +45,13 @@ PYTHONPATH=<path-to-docker-deploy-workflows>/src \
 
 ## Version
 
-The version in the [`pyproject.toml`](../pyproject.toml) stays `0.0.0`. The
-workflows run the package from their own checkout, so the major version tag is
-the only version.
+docker-deploy-workflows has no version numbers besides its major version tags,
+such as `v1`, which the [README](../README.md) describes. The workflows run the
+package from their own checkout, so the version in
+[`pyproject.toml`](../pyproject.toml) does not matter and stays `0.0.0`.
 
 [actionlint]: https://github.com/kjanat/actionlint
 [dprint]: https://dprint.dev/
 [gh]: https://cli.github.com/
-[git]: https://git-scm.com/
 [reuse]: https://reuse.software/
 [uv]: https://docs.astral.sh/uv/
