@@ -59,6 +59,7 @@ class Clones:
         self._directory = tempfile.TemporaryDirectory()
         self._clones: dict[str, Path] = {}
         self._logs: dict[tuple[str, str, str], list[Commit]] = {}
+        self._mainlines: dict[tuple[str, str, str], set[str]] = {}
 
     def clone(self, repository: str) -> Path:
         if repository not in self._clones:
@@ -105,6 +106,25 @@ class Clones:
             )
             self._logs[key] = parse_log(output)
         return self._logs[key]
+
+    def mainline(self, repository: str, cutoff: str, tip: str) -> set[str]:
+        """The paths `tip`'s first-parent line has had since `cutoff`.
+
+        Images build from that line. A file that only a side branch had,
+        such as a migration that a pull request added and removed again,
+        is not among them.
+        """
+        key = (repository, cutoff, tip)
+        if key not in self._mainlines:
+            output = git(
+                "log", "-z", "--first-parent", "--diff-merges=first-parent",
+                "--no-renames", "--name-only", "--format=",
+                f"{cutoff}..{tip}",
+                cwd=self.clone(repository),
+            )  # fmt: skip
+            paths = {path for path in output.split("\0") if path}
+            self._mainlines[key] = paths | set(self.files(repository, cutoff))
+        return self._mainlines[key]
 
     def heads(self, repository: str, commits: list[Commit]) -> list[Commit]:
         """The commits among `commits` that no other one contains."""
@@ -166,10 +186,12 @@ def matches(path: str, globs: list[str], variant: str) -> bool:
     )
 
 
-def counts(change: Change, rules: Rules, variant: str) -> bool:
+def counts(
+    change: Change, rules: Rules, variant: str, mainline: set[str]
+) -> bool:
     """Whether a change is an edit that an existing database misses."""
     for path in change.paths:
-        if matches(path, rules.exclude, variant):
+        if path not in mainline or matches(path, rules.exclude, variant):
             continue
         if change.status in MIGRATION_STATUSES and matches(
             path, rules.migrations, variant
@@ -182,12 +204,17 @@ def counts(change: Change, rules: Rules, variant: str) -> bool:
     return False
 
 
-def edits(commits: list[Commit], rules: Rules, variant: str) -> list[Commit]:
+def edits(
+    commits: list[Commit], rules: Rules, variant: str, mainline: set[str]
+) -> list[Commit]:
     """The commits among `commits` that edit a watched file."""
     return [
         commit
         for commit in commits
-        if any(counts(change, rules, variant) for change in commit.changes)
+        if any(
+            counts(change, rules, variant, mainline)
+            for change in commit.changes
+        )
     ]
 
 

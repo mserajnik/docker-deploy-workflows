@@ -100,6 +100,15 @@ class FakeClones(scan.Clones):
     def files(self, repository: str, commit: str) -> list[str]:
         return self.paths
 
+    def mainline(self, repository: str, cutoff: str, tip: str) -> set[str]:
+        assert (cutoff, tip) == (sha("0"), COMMITS[repository])
+        return {
+            path
+            for commit in self.logs[repository]
+            for change in commit.changes
+            for path in change.paths
+        }
+
 
 @pytest.fixture
 def registry(monkeypatch: pytest.MonkeyPatch) -> dict[tuple[str, str], Any]:

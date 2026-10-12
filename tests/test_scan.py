@@ -67,12 +67,22 @@ WORLD = Rules(
 )
 
 
+def scan_edits(
+    upstream: Upstream, cutoff: str, rules: Rules = WORLD
+) -> tuple[scan.Clones, list[scan.Commit]]:
+    clones = scan.Clones(url="file://{}")
+    repository = str(upstream.path)
+    tip = upstream.git("rev-parse", "HEAD")
+    log = clones.log(repository, cutoff, tip)
+    mainline = clones.mainline(repository, cutoff, tip)
+    return clones, scan.edits(log, rules, "v", mainline)
+
+
 def edit_subjects(
     upstream: Upstream, cutoff: str, rules: Rules = WORLD
 ) -> list[str]:
-    return [
-        c.subject for c in scan.edits(scan_log(upstream, cutoff), rules, "v")
-    ]
+    _, edits = scan_edits(upstream, cutoff, rules)
+    return [c.subject for c in edits]
 
 
 def test_added_migration_is_no_edit(upstream: Upstream) -> None:
@@ -205,6 +215,67 @@ def test_evil_merge(
     assert edit_subjects(upstream, cutoff) == edits
 
 
+@pytest.mark.parametrize("path", ["sql/updates/2.sql", "sql/base/new.sql"])
+def test_file_only_a_side_branch_had_is_no_edit(
+    upstream: Upstream, path: str
+) -> None:
+    cutoff = upstream.git("rev-parse", "HEAD")
+    upstream.git("checkout", "--quiet", "-b", "side")
+    upstream.write(path, "added\n")
+    upstream.commit("Side add")
+    upstream.git("rm", "--quiet", path)
+    upstream.commit("Side removal")
+    upstream.git("checkout", "--quiet", "main")
+    upstream.write("other.txt", "x\n")
+    upstream.commit("Main work")
+    upstream.git("merge", "--quiet", "--no-ff", "side", "-m", "Merge")
+    assert edit_subjects(upstream, cutoff) == []
+
+
+def test_merged_file_counts_for_later_edits(upstream: Upstream) -> None:
+    cutoff = upstream.git("rev-parse", "HEAD")
+    for subject in ("Add", "Edit"):
+        upstream.git("checkout", "--quiet", "-b", subject)
+        upstream.write("sql/updates/2.sql", f"{subject}\n")
+        upstream.commit(subject)
+        upstream.git("checkout", "--quiet", "main")
+        upstream.git("merge", "--quiet", "--no-ff", subject, "-m", "Merge")
+    assert edit_subjects(upstream, cutoff) == ["Edit"]
+
+
+def test_fast_forward_keeps_edits_of_a_file_at_the_cutoff(
+    upstream: Upstream,
+) -> None:
+    cutoff = upstream.git("rev-parse", "HEAD")
+    upstream.git("checkout", "--quiet", "-b", "side")
+    upstream.write("side.txt", "x\n")
+    upstream.commit("Side work")
+    upstream.git("checkout", "--quiet", "main")
+    upstream.write("sql/updates/1.sql", "edit\n")
+    upstream.commit("Edit")
+    upstream.write("sql/updates/1.sql", "one\n")
+    upstream.commit("Revert")
+    upstream.git("checkout", "--quiet", "side")
+    upstream.git("merge", "--quiet", "--no-ff", "main", "-m", "Update branch")
+    upstream.git("checkout", "--quiet", "main")
+    upstream.git("merge", "--quiet", "--ff-only", "side")
+    assert edit_subjects(upstream, cutoff) == ["Edit", "Revert"]
+
+
+def test_rename_to_a_side_only_path_counts(upstream: Upstream) -> None:
+    cutoff = upstream.git("rev-parse", "HEAD")
+    upstream.git("checkout", "--quiet", "-b", "side")
+    upstream.git("mv", "sql/updates/1.sql", "sql/updates/9.sql")
+    upstream.commit("Rename")
+    upstream.git("rm", "--quiet", "sql/updates/9.sql")
+    upstream.commit("Remove")
+    upstream.git("checkout", "--quiet", "main")
+    upstream.write("other.txt", "x\n")
+    upstream.commit("Main work")
+    upstream.git("merge", "--quiet", "--no-ff", "side", "-m", "Merge")
+    assert edit_subjects(upstream, cutoff) == ["Rename"]
+
+
 def test_separator_in_a_subject(upstream: Upstream) -> None:
     cutoff = upstream.git("rev-parse", "HEAD")
     upstream.write("sql/updates/1.sql", "edit\n")
@@ -228,10 +299,8 @@ def test_heads_keep_an_edit_merged_in_behind(upstream: Upstream) -> None:
     upstream.git("merge", "--quiet", "--no-ff", "main", "-m", "Update branch")
     upstream.git("checkout", "--quiet", "main")
     upstream.git("merge", "--quiet", "--ff-only", "side")
-    clones = scan.Clones(url="file://{}")
-    repository = str(upstream.path)
-    log = clones.log(repository, cutoff, upstream.git("rev-parse", "HEAD"))
-    heads = clones.heads(repository, scan.edits(log, WORLD, "v"))
+    clones, edits = scan_edits(upstream, cutoff)
+    heads = clones.heads(str(upstream.path), edits)
     assert sorted(c.subject for c in heads) == ["Main edit", "Side edit"]
 
 
@@ -283,6 +352,18 @@ def test_log_depends_on_the_range(upstream: Upstream) -> None:
     assert clones.log(str(upstream.path), head, head) == []
     assert len(clones.log(str(upstream.path), head, later)) == 1
     assert clones.log(str(upstream.path), later, later) == []
+
+
+def test_mainline_depends_on_the_range(upstream: Upstream) -> None:
+    head = upstream.git("rev-parse", "HEAD")
+    upstream.write("sql/updates/2.sql", "two\n")
+    upstream.git("rm", "--quiet", "sql/updates/1.sql")
+    later = upstream.commit("Later")
+    clones = scan.Clones(url="file://{}")
+    repository = str(upstream.path)
+    assert "sql/updates/2.sql" not in clones.mainline(repository, head, head)
+    assert "sql/updates/2.sql" in clones.mainline(repository, head, later)
+    assert "sql/updates/1.sql" not in clones.mainline(repository, later, later)
 
 
 def test_clone_holds_no_file_contents(upstream: Upstream) -> None:

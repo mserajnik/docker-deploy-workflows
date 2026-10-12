@@ -189,7 +189,10 @@ class Planner:
                     variant,
                 )
                 commits = scan.edits(
-                    self.clones.log(repository, cutoff, tip), rules, variant
+                    self.clones.log(repository, cutoff, tip),
+                    rules,
+                    variant,
+                    self.clones.mainline(repository, cutoff, tip),
                 )
                 match target.remedy:
                     case "recreate":

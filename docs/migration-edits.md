@@ -19,6 +19,10 @@ watch rule covers:
   deletes it, or changes its type. Both paths of a rename count.
 - A file that `base` matches also counts when upstream adds it.
 - A file that `exclude` matches never counts.
+- A file counts only when the current commit's first-parent line, which images
+  build from, had it at some point since the cutoff. A file that only a side
+  branch had, such as a migration that a pull request added and removed again,
+  does not count.
 - A merge counts for the files it changes relative to every parent.
 
 Globs match whole paths: `*` stays within one directory, and `**` spans any
