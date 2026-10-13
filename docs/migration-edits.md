@@ -8,7 +8,7 @@ one included. Commits with such changes are migration edits, and
 docker-deploy-workflows passes them to the database image, so the image can
 handle them appropriately.
 
-## The scan
+## Scan
 
 Every run that builds a database image for a variant rescans each source that a
 target watches, from the source's cutoff to its current commit, in a blobless
@@ -33,7 +33,7 @@ could change unnoticed.
 When upstream rewrites its history, the cutoff can end up outside the history
 of the current commit. The run then fails and asks for a new cutoff.
 
-## The wire value
+## Wire value
 
 The image receives the edits as one build argument, such as
 `TORTOISE_MIGRATION_EDITS`, with this format:
@@ -56,7 +56,7 @@ A complete value for a variant with two sources:
 world:core@1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b,db@4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e|characters:|realmd:|logs:
 ```
 
-## The database image's part
+## Database images
 
 docker-deploy-workflows only passes the value on. How a database image handles
 it is up to the image. The database images of mserajnik/cmangos-deploy,
@@ -66,7 +66,7 @@ following with their default settings:
 - They keep a ledger of the edits they have handled, in
   `maintenance.migration_corrections (db_name, commit_hash)`, keyed by target
   name. On start, they check each target.
-- A commit in the ledger calls for no action.
+- A commit in the ledger needs no action.
 - For a target with the remedy `recreate` and a commit outside the ledger, the
   image drops the database and imports it again, and then each of its commits
   is added to the ledger. One re-creation is enough for several pending

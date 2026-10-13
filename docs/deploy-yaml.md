@@ -18,7 +18,7 @@ is unknown, or unavailable in its place, fails the run.
 | `{short-commit:<source>}` | The same commit, 7 characters.                                   |
 | `{url:<source>}`          | The source's clone URL, `https://github.com/<owner>/<name>.git`. |
 | `{var:<name>}`            | The var's value, itself a template without further vars.         |
-| `{migration-edits}`       | The variant's [wire value](migration-edits.md#the-wire-value).   |
+| `{migration-edits}`       | The variant's [wire value](migration-edits.md#wire-value).       |
 | `{timestamp}`             | The run's start time, such as `2026-09-29T00:00:00Z`.            |
 
 A source's `repository` and `branch`, and the globs of a watch rule, take
