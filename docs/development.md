@@ -2,8 +2,8 @@
 
 ## Dependencies
 
-- [uv][uv], for managing Python packages. It also installs Python 3.14 or later
-  when it is missing.
+- [uv][uv], for managing Python packages. It also installs Python 3.15 when it
+  is missing.
 - [GitHub CLI][gh], logged in, for the plan below.
 - [kjanat/actionlint][actionlint], for linting the workflows. It is a
   maintained fork of actionlint that supports `ubuntu-26.04` runners,
