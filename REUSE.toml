@@ -12,6 +12,7 @@ path = [
   ".editorconfig",
   ".gitignore",
   ".python-version",
+  "flake.lock",
   "pyproject.toml",
   "uv.lock",
 ]

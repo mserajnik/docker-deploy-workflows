@@ -1,0 +1,63 @@
+{
+  "nodes": {
+    "actionlint": {
+      "inputs": {
+        "nixpkgs": "nixpkgs"
+      },
+      "locked": {
+        "lastModified": 1789315148,
+        "narHash": "sha256-OA6Pzb/DVh3wcF/KFdnAtALBO2YSsch/L28EzZnLxqM=",
+        "owner": "kjanat",
+        "repo": "actionlint",
+        "rev": "08bb2c4f0d039744455b87aef1c647fb8b66d37b",
+        "type": "github"
+      },
+      "original": {
+        "owner": "kjanat",
+        "ref": "v1.17.0",
+        "repo": "actionlint",
+        "type": "github"
+      }
+    },
+    "nixpkgs": {
+      "locked": {
+        "lastModified": 1788894124,
+        "narHash": "sha256-guyexwrrF5GBKqjO0eg9LNIvrXn4j2frNak63sDr8zg=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "da39501c8d0a093136854eddcd6927c8a8bb0d8f",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixpkgs-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "nixpkgs_2": {
+      "locked": {
+        "lastModified": 1793645915,
+        "narHash": "sha256-yRzh4uc8uxFv5+5TROEIH1rUL2FF1/cvfc+uq5JGGHY=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "f9887a8a434bfba06e20dfc77bc8e0628266af84",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixpkgs-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "root": {
+      "inputs": {
+        "actionlint": "actionlint",
+        "nixpkgs": "nixpkgs_2"
+      }
+    }
+  },
+  "root": "root",
+  "version": 7
+}

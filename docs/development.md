@@ -12,6 +12,13 @@
 - [REUSE][reuse], for checking the licensing of every file.
 - [dprint][dprint], for formatting Markdown files.
 
+There is also a [Nix flake](../flake.nix) with a development shell that
+provides all of the dependencies. To enter it, run:
+
+```sh
+nix develop
+```
+
 ## Checks
 
 To run the same checks as this repository's
