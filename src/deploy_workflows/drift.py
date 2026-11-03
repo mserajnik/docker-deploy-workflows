@@ -153,8 +153,8 @@ def suggest_pin(subject: Subject, paths: list[str]) -> str:
     title = newest.commit.message.partition("\n")[0]
     return (
         f"Suggested pin for '{subject.name}': {newest.sha} ({title})."
-        " Check that it covers every drifted path. Changes on separate"
-        " branches can need the commit that merges them."
+        " Check that it covers every drifted path. If the paths were changed"
+        " on separate branches, pin the commit that merges them."
     )
 
 
