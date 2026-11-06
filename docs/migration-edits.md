@@ -1,12 +1,11 @@
 # Migration edits
 
 A deployment applies upstream's migrations forward: a new migration file runs
-on the next start. When upstream edits, renames, or deletes a migration that an
-existing database has already applied, the database cannot pick up the change
-by itself. An existing database also misses every change to a base file, a new
-one included. Commits with such changes are migration edits, and
-docker-deploy-workflows passes them to the database image, so the image can
-handle them appropriately.
+once, the first time the deployment uses an image that contains it. When
+upstream edits, renames, or deletes a migration that an existing database has
+already applied, or changes or adds a base file, the database cannot pick up
+the change by itself. Commits with such changes are migration edits, and
+docker-deploy-workflows passes them on for the database image to handle.
 
 ## Scan
 
@@ -65,15 +64,16 @@ following with their default settings:
 
 - They keep a ledger of the edits they have handled, in
   `maintenance.migration_corrections (db_name, commit_hash)`, keyed by target
-  name. On start, they check each target.
+  name. Every time their container starts, they check each target.
 - A commit in the ledger needs no action.
 - For a target with the remedy `recreate` and a commit outside the ledger, the
-  image drops the database and imports it again, and then each of its commits
-  is added to the ledger. One re-creation is enough for several pending
+  container drops the database and imports it again, and then each of its
+  commits is added to the ledger. One re-creation is enough for several pending
   commits.
-- A target with the remedy `manual` and a commit outside the ledger halts
-  startup and lists the commits. Once the operator applies the changes and
-  confirms, its commits are added to the ledger.
+- For a target with the remedy `manual` and a commit outside the ledger, the
+  container halts before the database is ready and lists the commits. Once the
+  operator applies the changes and confirms, its commits are added to the
+  ledger.
 - A new database records every commit of the value as handled, because it was
   created from files that already contain them.
 - Their parser refuses a `<target>` without `:` and a `<source>@<commit>`

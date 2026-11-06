@@ -105,7 +105,7 @@ a forced rebuild.
 The lint workflow checks the repository with `hadolint`, `shellcheck`, `shfmt`,
 `docker compose config`, `reuse lint`, and `dprint check`. The caller
 repository needs a dprint configuration file, because `dprint check` fails
-without one. The inputs take paths relative to the repository root, one per
+without it. The inputs take paths relative to the repository root, one per
 line.
 
 | Input               | Default | Description                                                                                |

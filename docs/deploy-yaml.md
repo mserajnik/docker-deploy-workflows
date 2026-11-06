@@ -8,8 +8,8 @@ of the wrong type.
 
 These values are templates: an image's `package`, `dockerfile`, `tags`,
 `build-args` values, and `oci` values, the values of `vars`, and a badge's
-`message`. A placeholder is `{<name>}` or `{<name>:<argument>}`, and one that
-is unknown, or unavailable in its place, fails the run.
+`message`. A placeholder is `{<name>}` or `{<name>:<argument>}`. The run fails
+when a placeholder is unknown or unavailable in its place.
 
 | Placeholder               | Value                                                            |
 | ------------------------- | ---------------------------------------------------------------- |
@@ -58,11 +58,11 @@ Each source has:
 
 Quote a numeric variant name, such as `"5875"`. Each variant has:
 
-| Key           | Default     | Description                                             |
-| ------------- | ----------- | ------------------------------------------------------- |
-| `sources`     | All sources | The names of the sources it builds from.                |
-| `moving-tags` | `[]`        | Tags it adds to every image, such as `[latest]`.        |
-| `vars`        | `{}`        | Vars that override the top-level ones of the same name. |
+| Key           | Default     | Description                                                                                      |
+| ------------- | ----------- | ------------------------------------------------------------------------------------------------ |
+| `sources`     | All sources | The names of the sources it builds from.                                                         |
+| `moving-tags` | `[]`        | Tags it adds to every image, such as `[latest]`.                                                 |
+| `vars`        | `{}`        | Values for `{var:<name>}`. Each overrides the top-level `vars` entry with the same name, if any. |
 
 ### `drift`
 

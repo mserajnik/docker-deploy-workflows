@@ -104,7 +104,7 @@ class ImageConfig(msgspec.Struct):
 
 
 class HttpError(Exception):
-    """An answer other than the ones a caller handles."""
+    """An answer that the calling code does not handle."""
 
 
 def token() -> str:

@@ -112,7 +112,7 @@ def show(plan: Plan) -> None:
 def run_index(args: argparse.Namespace) -> int:
     """Joins the per-architecture images into one index.
 
-    Removes them again when one is missing.
+    Removes them again when an architecture's image is missing.
     """
     leg = msgspec.json.decode(args.leg, type=Leg)
     directory = Path(args.digests)

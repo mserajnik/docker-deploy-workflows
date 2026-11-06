@@ -133,7 +133,7 @@ def _lines(content: bytes) -> list[str]:
 def suggest_pin(subject: Subject, paths: list[str]) -> str:
     """The newest commit to touch a drifted path, as a message line.
 
-    Only commits at or before the resolved one count.
+    It looks only at the history up to the resolved commit.
     """
     changes = [
         change

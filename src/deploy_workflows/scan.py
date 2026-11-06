@@ -15,9 +15,10 @@ from pathlib import Path, PurePosixPath
 from deploy_workflows.config import ConfigError, Rules
 from deploy_workflows.templates import Scope, expand
 
-# Only a change, a move, or a removal of a migration file counts,
-# because a database applies a new one on its next start. It imports
-# base files once, on creation, which makes an added base file count.
+# A deployment applies a new migration file by itself, the first time it
+# runs an image that contains the file, so only a change, a move, or a
+# removal counts. A database imports base files only once, on creation,
+# which makes an added base file count.
 MIGRATION_STATUSES = frozenset("MRDT")
 BASE_STATUSES = MIGRATION_STATUSES | {"A"}
 
@@ -127,7 +128,7 @@ class Clones:
         return self._mainlines[key]
 
     def heads(self, repository: str, commits: list[Commit]) -> list[Commit]:
-        """The commits among `commits` that no other one contains."""
+        """The `commits` that no other entry contains."""
         if not commits:
             return []
         output = git(
