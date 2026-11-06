@@ -37,7 +37,7 @@ dprint check
 ## Plan
 
 Every build run starts with a plan job. It reads the caller repository's
-`.github/deploy.yaml`, runs the drift checks, and works out which images to
+`.github/deploy.yaml`, runs the diff checks, and works out which images to
 build, with their tags, build arguments, and labels.
 
 To print that plan for a caller repository against the real GitHub and

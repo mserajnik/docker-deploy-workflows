@@ -76,12 +76,12 @@ def run_plan(args: argparse.Namespace) -> int:
             file.write(f"badges={msgspec.json.encode(plan.badges).decode()}\n")
             file.write(f"retention={loaded.retention}\n")
             file.write(f"retention-account={account}\n")
-    if plan.drift_failures:
-        for failure in plan.drift_failures:
+    if plan.diff_failures:
+        for failure in plan.diff_failures:
             print(failure, file=sys.stderr)
         report(
             "error",
-            "Upstream drifted from the pinned commits. Review the"
+            "Upstream changed files since their pinned commits. Review the"
             " differences above, adjust the repository where needed,"
             " and bump the pins in '.github/deploy.yaml'.",
         )

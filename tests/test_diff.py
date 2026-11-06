@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2026 Michael Serajnik <https://github.com/mserajnik>
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-"""Drift checks on fake upstream content.
+"""Diff checks on fake upstream content.
 
 The configuration is modeled on mserajnik/lost-city-rs-deploy, with
 per-variant pins and file, absence, and tree checks.
@@ -11,7 +11,7 @@ import msgspec
 import pytest
 import yaml
 
-from deploy_workflows import drift, github
+from deploy_workflows import diff, github
 from deploy_workflows.config import Config, ConfigError
 
 PIN = "a" * 40
@@ -24,7 +24,7 @@ sources:
     branch: "{{variant}}"
     pins: {{"274": "{PIN}", "254": "{PIN}"}}
 variants: {{"274": {{}}, "254": {{}}}}
-drift:
+diff:
   upstreams:
     mariadb: {{repository: o/mariadb, branch: master, pin: "{PIN}"}}
   checks:
@@ -84,14 +84,14 @@ def config() -> Config:
     return msgspec.convert(yaml.safe_load(CONFIG), Config)
 
 
-def test_no_drift(upstream: dict, capsys: pytest.CaptureFixture[str]) -> None:
-    assert drift.run(config(), resolve) == []
+def test_no_change(upstream: dict, capsys: pytest.CaptureFixture[str]) -> None:
+    assert diff.run(config(), resolve) == []
     output = capsys.readouterr().out
     assert "OK: o/engine:package-lock.json (engine (254), absent)" in output
 
 
 def test_same_pin_and_commit_is_checked_once(upstream: dict) -> None:
-    subjects = drift.subjects(config(), config().drift.checks[0], resolve)
+    subjects = diff.subjects(config(), config().diff.checks[0], resolve)
     assert [subject.name for subject in subjects] == ["engine (274, 254)"]
 
 
@@ -99,23 +99,23 @@ def test_same_pin_at_other_commits_is_checked_apart(upstream: dict) -> None:
     def apart(source: str, variant: str | None) -> tuple[str, str]:
         return "o/engine", LATEST if variant == "274" else PIN
 
-    subjects = drift.subjects(config(), config().drift.checks[0], apart)
+    subjects = diff.subjects(config(), config().diff.checks[0], apart)
     assert [subject.latest for subject in subjects] == [LATEST, PIN]
 
 
-def test_changed_file_absent_file_and_tree_drift(
+def test_changed_file_absent_file_and_tree(
     upstream: dict, capsys: pytest.CaptureFixture[str]
 ) -> None:
     upstream["files"]["o/engine", LATEST, ".gitignore"] = b"db\nsaves\n"
     upstream["files"]["o/engine", LATEST, "package-lock.json"] = b"{}"
     upstream["trees"][LATEST, "migrations"] = ["m/1 s2"]
-    failures = drift.run(config(), resolve)
-    drifted = [
+    failures = diff.run(config(), resolve)
+    changed = [
         line.split(" ")[1]
         for line in capsys.readouterr().out.splitlines()
-        if line.startswith("DRIFT:")
+        if line.startswith("CHANGED:")
     ]
-    assert drifted == [
+    assert changed == [
         "o/engine:.gitignore",
         "o/engine:migrations",
         "o/engine:package-lock.json",
@@ -129,28 +129,28 @@ def test_changed_file_absent_file_and_tree_drift(
 def test_missing_pin_fails(upstream: dict) -> None:
     broken = config()
     broken.sources["engine"].pins.pop("254")
-    with pytest.raises(ConfigError, match="no drift check pin"):
-        drift.run(broken, resolve)
+    with pytest.raises(ConfigError, match="no diff check pin"):
+        diff.run(broken, resolve)
 
 
-def test_undecodable_bytes_still_drift(upstream: dict) -> None:
+def test_undecodable_bytes_still_differ(upstream: dict) -> None:
     upstream["files"]["o/mariadb", PIN, "entrypoint.sh"] = b"\xe4\n"
     upstream["files"]["o/mariadb", LATEST, "entrypoint.sh"] = b"\xf6\n"
-    assert drift.run(config(), resolve) == [
-        "GitHub has no commit that touched the drifted paths of 'mariadb'."
+    assert diff.run(config(), resolve) == [
+        "GitHub has no commit that touched the changed paths of 'mariadb'."
     ]
 
 
 def test_escaped_text_is_not_the_byte(upstream: dict) -> None:
     upstream["files"]["o/mariadb", PIN, "entrypoint.sh"] = b"a\\xff\n"
     upstream["files"]["o/mariadb", LATEST, "entrypoint.sh"] = b"a\xff\n"
-    assert len(drift.run(config(), resolve)) == 1
+    assert len(diff.run(config(), resolve)) == 1
 
 
 def test_missing_tree_fails(upstream: dict) -> None:
     upstream["trees"][PIN, "migrations"] = []
     with pytest.raises(ConfigError, match="not a directory"):
-        drift.run(config(), resolve)
+        diff.run(config(), resolve)
 
 
 def test_vanished_watched_file_fails(upstream: dict) -> None:
@@ -158,4 +158,4 @@ def test_vanished_watched_file_fails(upstream: dict) -> None:
     with pytest.raises(
         ConfigError, match=f"at {LATEST}. Review the path and the pin"
     ):
-        drift.run(config(), resolve)
+        diff.run(config(), resolve)

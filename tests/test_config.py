@@ -99,10 +99,10 @@ def test_unknown_name_fails(tmp_path: Path, extra: str) -> None:
 
 def upstream(name: str) -> str:
     entry = f"{{repository: o/u, branch: main, pin: '{'0' * 40}'}}"
-    return f"drift:\n  upstreams:\n    {name}: {entry}\n"
+    return f"diff:\n  upstreams:\n    {name}: {entry}\n"
 
 
-def test_source_and_drift_upstream_may_not_share_a_name(
+def test_source_and_diff_upstream_may_not_share_a_name(
     tmp_path: Path,
 ) -> None:
     with pytest.raises(
@@ -111,7 +111,7 @@ def test_source_and_drift_upstream_may_not_share_a_name(
         load(write(tmp_path, MINIMAL + upstream("core")))
 
 
-def test_drift_upstream_with_its_own_name_loads(tmp_path: Path) -> None:
+def test_diff_upstream_with_its_own_name_loads(tmp_path: Path) -> None:
     load(write(tmp_path, MINIMAL + upstream("other")))
 
 

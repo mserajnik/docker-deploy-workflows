@@ -110,13 +110,13 @@ def test_report_marks_annotations(
 
 @pytest.mark.parametrize("force", [True, False])
 @pytest.mark.parametrize("organization", [True, False])
-def test_drift_fails_the_plan(
+def test_a_diff_fails_the_plan(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
     force: bool,
     organization: bool,
 ) -> None:
-    failed = cli.Plan([[LEG], [], []], ["srv", "db"], [], ["drift"])
+    failed = cli.Plan([[LEG], [], []], ["srv", "db"], [], ["diff"])
     planned = []
     asked = []
 

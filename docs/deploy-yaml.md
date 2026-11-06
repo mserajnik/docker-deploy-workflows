@@ -23,7 +23,7 @@ when a placeholder is unknown or unavailable in its place.
 
 A source's `repository` and `branch`, and the globs of a watch rule, take
 `{variant}` only. The message of a badge without `variant` takes `{timestamp}`
-only. The `repository` and `branch` of an entry of `drift.upstreams` cannot
+only. The `repository` and `branch` of an entry of `diff.upstreams` cannot
 contain placeholders. A placeholder in any other value stays as written.
 
 ## Keys
@@ -34,7 +34,7 @@ contain placeholders. A placeholder in any other value stays as written.
 | `sources`         | Required | The build sources, by name. See the [`sources` section](#sources).                                                                                                                                                                                                                                                                                                              |
 | `variants`        | Required | The variants, by name. See the [`variants` section](#variants).                                                                                                                                                                                                                                                                                                                 |
 | `vars`            | `{}`     | Default values for `{var:<name>}`.                                                                                                                                                                                                                                                                                                                                              |
-| `drift`           | None     | The drift checks. See the [`drift` section](#drift).                                                                                                                                                                                                                                                                                                                            |
+| `diff`            | None     | The diff checks. See the [`diff` section](#diff).                                                                                                                                                                                                                                                                                                                               |
 | `migration-edits` | None     | The migration-edit targets. See the [`migration-edits` section](#migration-edits).                                                                                                                                                                                                                                                                                              |
 | `images`          | Required | Up to three images, in build order. See the [`images` section](#images).                                                                                                                                                                                                                                                                                                        |
 | `badges`          | `[]`     | The badges, uploaded over FTP. See the [`badges` section](#badges).                                                                                                                                                                                                                                                                                                             |
@@ -49,8 +49,8 @@ Each source has:
 | ------------ | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `repository` | Required | `<owner>/<name>` on GitHub.                                                                                                                        |
 | `branch`     | Required | The branch the build follows.                                                                                                                      |
-| `pin`        | None     | The drift check pin for every variant.                                                                                                             |
-| `pins`       | `{}`     | Drift check pins by variant name, which replace `pin` for those variants.                                                                          |
+| `pin`        | None     | The diff check pin for every variant.                                                                                                              |
+| `pins`       | `{}`     | Diff check pins by variant name, which replace `pin` for those variants.                                                                           |
 | `cutoff`     | None     | The commit the migration-edit scan starts after, for every variant. A source that a target watches needs a cutoff from this key or from `cutoffs`. |
 | `cutoffs`    | `{}`     | Cutoffs by variant name, which replace `cutoff` for those variants.                                                                                |
 
@@ -64,12 +64,12 @@ Quote a numeric variant name, such as `"5875"`. Each variant has:
 | `moving-tags` | `[]`        | Tags it adds to every image, such as `[latest]`.                                                 |
 | `vars`        | `{}`        | Values for `{var:<name>}`. Each overrides the top-level `vars` entry with the same name, if any. |
 
-### `drift`
+### `diff`
 
-| Key         | Default | Description                                        |
-| ----------- | ------- | -------------------------------------------------- |
-| `upstreams` | `{}`    | Repositories that only drift checks read, by name. |
-| `checks`    | `[]`    | The drift checks.                                  |
+| Key         | Default | Description                                       |
+| ----------- | ------- | ------------------------------------------------- |
+| `upstreams` | `{}`    | Repositories that only diff checks read, by name. |
+| `checks`    | `[]`    | The diff checks.                                  |
 
 Each entry of `upstreams` has:
 
@@ -77,7 +77,7 @@ Each entry of `upstreams` has:
 | ------------ | -------- | --------------------------- |
 | `repository` | Required | `<owner>/<name>` on GitHub. |
 | `branch`     | Required | The branch the check reads. |
-| `pin`        | Required | The drift check pin.        |
+| `pin`        | Required | The diff check pin.         |
 
 Each check has:
 
@@ -204,7 +204,7 @@ vars:
   module-build-packages: ""
   server-licenses: AGPL-3.0-only AND AGPL-3.0-or-later AND GPL-2.0-or-later
 
-drift:
+diff:
   upstreams:
     mariadb:
       repository: MariaDB/mariadb-docker

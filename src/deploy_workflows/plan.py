@@ -10,7 +10,7 @@ from typing import assert_never
 
 import msgspec
 
-from deploy_workflows import drift, github, scan
+from deploy_workflows import diff, github, scan
 from deploy_workflows.config import (
     Config,
     ConfigError,
@@ -84,7 +84,7 @@ class Plan:
     slots: list[list[Leg]]
     packages: list[str]
     badges: list[BadgeFile]
-    drift_failures: list[str]
+    diff_failures: list[str]
 
 
 class Planner:
@@ -109,11 +109,11 @@ class Planner:
         """The repository and resolved commit of a source for a variant.
 
         With `variant` as `None`, the same for an entry of
-        `drift.upstreams`.
+        `diff.upstreams`.
         """
         entry: Source | Upstream
         if variant is None:
-            entry = self.config.drift.upstreams[source]
+            entry = self.config.diff.upstreams[source]
         else:
             entry = pick(self.config.sources, source, "source")
         where = Scope(variant=variant)
@@ -315,7 +315,7 @@ class Planner:
         return files
 
     def plan(self) -> Plan:
-        failures = drift.run(self.config, self.resolve)
+        failures = diff.run(self.config, self.resolve)
         if self.build_everything:
             print("This run is a forced rebuild, so every leg builds.")
         slots: list[list[Leg]] = [[], [], []]

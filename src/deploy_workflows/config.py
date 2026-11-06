@@ -43,7 +43,7 @@ class Variant(Model):
     vars: dict[str, str] = {}
 
 
-class DriftCheck(Model):
+class DiffCheck(Model):
     source: str
     variants: list[str] | None = None
     files: list[str] = []
@@ -51,9 +51,9 @@ class DriftCheck(Model):
     trees: list[str] = []
 
 
-class Drift(Model):
+class Diff(Model):
     upstreams: dict[str, Upstream] = {}
-    checks: list[DriftCheck] = []
+    checks: list[DiffCheck] = []
 
 
 class Rules(Model):
@@ -103,7 +103,7 @@ class Config(Model):
     sources: dict[str, Source]
     variants: dict[str, Variant]
     images: list[Image]
-    drift: Drift = msgspec.field(default_factory=Drift)
+    diff: Diff = msgspec.field(default_factory=Diff)
     migration_edits: MigrationEdits = msgspec.field(
         default_factory=lambda: MigrationEdits(targets={})
     )
@@ -165,10 +165,10 @@ def check(config: Config) -> None:
         raise ConfigError(
             f"A configuration can have at most {MAX_IMAGES} images."
         )
-    if clashes := config.drift.upstreams.keys() & config.sources.keys():
+    if clashes := config.diff.upstreams.keys() & config.sources.keys():
         raise ConfigError(
             f"'{min(clashes)}' is the name of an entry of both 'sources'"
-            " and 'drift.upstreams'. Rename one of them."
+            " and 'diff.upstreams'. Rename one of them."
         )
     watched = {
         source
